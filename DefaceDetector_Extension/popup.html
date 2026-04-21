@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body class="light-mode">
+    <div class="container">
+        <h2>Deface Detector</h2>
+        
+        <div class="section">
+            <h3>Kiểm tra Trang hiện tại</h3>
+            <button id="btn-capture">📸 Chụp màn hình & Quét</button>
+            
+            <div class="divider">HOẶC</div>
+            
+            <input type="text" id="input-url" placeholder="Nhập URL cần kiểm tra...">
+            <button id="btn-check-url">🔗 Kiểm tra URL</button>
+        </div>
+
+        <div id="result-box" class="hidden">
+            <p>Trạng thái: <span id="status-text">Đang xử lý...</span></p>
+        </div>
+
+        <div class="section settings">
+            <h3>Cài đặt</h3>
+            <label>Email nhận cảnh báo:</label>
+            <input type="email" id="input-email" placeholder="admin@domain.com">
+
+            <div class="theme-toggle">
+                <label>Giao diện Tối (Dark Mode)</label>
+                <input type="checkbox" id="toggle-theme">
+            </div>
+            <button id="btn-save-settings">💾 Lưu Cài Đặt</button>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
