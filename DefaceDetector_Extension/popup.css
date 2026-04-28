@@ -1,85 +1,198 @@
+/* Biến màu sắc cho Theme */
 :root {
     --bg-color: #ffffff;
     --text-color: #333333;
-    --border-color: #cccccc;
-    --btn-bg: #007bff;
-    --btn-text: #ffffff;
+    --border-color: #e0e0e0;
+    --primary-color: #1a73e8;
+    --hover-bg: #f1f3f4;
+    --modal-bg: rgba(0, 0, 0, 0.5);
+    --surface-color: #ffffff;
 }
 
-body.dark-mode {
-    --bg-color: #1e1e1e;
-    --text-color: #f5f5f5;
-    --border-color: #444444;
-    --btn-bg: #0056b3;
+body.dark-theme {
+    --bg-color: #202124;
+    --text-color: #e8eaed;
+    --border-color: #5f6368;
+    --primary-color: #8ab4f8;
+    --hover-bg: #3c4043;
+    --surface-color: #292a2d;
 }
 
 body {
     width: 320px;
     margin: 0;
-    padding: 15px;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
-    transition: all 0.3s ease;
+    transition: background-color 0.3s, color 0.3s;
 }
 
-h2 { text-align: center; font-size: 18px; margin-top: 0; }
-h3 { font-size: 14px; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;}
-
-.section {
-    border: 1px solid var(--border-color);
-    padding: 12px;
-    border-radius: 6px;
-    margin-bottom: 15px;
+/* Header */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background-color: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
 }
 
-button {
-    width: 100%;
-    padding: 10px;
-    margin-top: 5px;
-    background-color: var(--btn-bg);
-    color: var(--btn-text);
+.app-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* Nút Hamburger */
+.hamburger-btn {
+    background: none;
     border: none;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 4px;
     border-radius: 4px;
+    display: flex;
+}
+.hamburger-btn:hover { background-color: var(--hover-bg); }
+
+/* Dropdown Menu */
+.menu-container { position: relative; }
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 35px;
+    background-color: var(--surface-color);
+    min-width: 180px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    z-index: 100;
+}
+.dropdown-content.show { display: block; }
+
+.dropdown-content a {
+    color: var(--text-color);
+    padding: 12px 16px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border-color);
+}
+.dropdown-content a:last-child { border-bottom: none; }
+.dropdown-content a:hover { background-color: var(--hover-bg); color: var(--primary-color); }
+.icon { margin-right: 8px; font-size: 16px; }
+
+/* Main Content */
+.main-content { padding: 20px 16px; text-align: center; }
+.primary-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
 }
 
-button:hover { opacity: 0.85; }
+/* Modals (Cửa sổ nổi) */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: var(--modal-bg);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 200;
+}
+.hidden { display: none !important; }
 
-input[type="text"], input[type="email"] {
-    width: 92%;
-    padding: 8px;
-    margin-top: 5px;
-    margin-bottom: 10px;
+.modal-content {
+    background-color: var(--surface-color);
+    padding: 20px;
+    border-radius: 8px;
+    width: 80%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.modal-content h3 { margin-top: 0; font-size: 15px; }
+
+.custom-select, .custom-input {
+    width: 100%; padding: 8px; margin-bottom: 15px;
     border: 1px solid var(--border-color);
-    background-color: var(--bg-color);
-    color: var(--text-color);
     border-radius: 4px;
+    background-color: var(--bg-color); color: var(--text-color);
 }
+
+.modal-actions { display: flex; justify-content: space-between; }
+.modal-actions button {
+    padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer;
+}
+.close-modal-btn { background-color: var(--hover-bg); color: var(--text-color); }
+.save-btn { background-color: var(--primary-color); color: white; }
+/* ---- BỔ SUNG CSS CHO 2 CHỨC NĂNG ---- */
+.desc { font-size: 13px; color: var(--text-color); opacity: 0.8; margin-bottom: 15px; }
+
+.action-card {
+    background-color: var(--hover-bg);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    text-align: left;
+    border: 1px solid var(--border-color);
+}
+.action-card h3 { margin: 0 0 5px 0; font-size: 14px; color: var(--primary-color); }
+.action-card p { margin: 0 0 10px 0; font-size: 12px; color: var(--text-color); opacity: 0.7;}
+
+.secondary-btn {
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+}
+.secondary-btn:hover { background-color: var(--primary-color); color: white; }
 
 .divider {
-    text-align: center;
-    margin: 12px 0;
-    font-size: 11px;
-    color: #888;
-    font-weight: bold;
+    text-align: center; margin: 15px 0; position: relative;
+}
+.divider span {
+    background: var(--bg-color); padding: 0 10px; font-size: 12px; color: var(--border-color); font-weight: bold; position: relative; z-index: 1;
+}
+.divider::before {
+    content: ""; position: absolute; top: 50%; left: 0; right: 0; border-top: 1px solid var(--border-color); z-index: 0;
 }
 
-.hidden { display: none; }
+/* Khối Kết quả */
+.result-box {
+    margin-top: 15px; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: bold; text-align: center;
+}
+.result-safe { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.result-danger { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.result-loading { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
 
-#result-box {
-    padding: 12px;
-    background-color: #f8f9fa;
-    border-left: 4px solid #ffc107;
-    color: #333;
-    border-radius: 4px;
+/* ---- KHUNG LỊCH SỬ ---- */
+.history-list {
+    max-height: 250px;
+    overflow-y: auto;
     margin-bottom: 15px;
+    text-align: left;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-color);
 }
-
-body.dark-mode #result-box {
-    background-color: #2d2d2d;
-    color: #fff;
+.history-item {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 13px;
 }
-
-#status-text { font-weight: bold; }
+.history-item:last-child { border-bottom: none; }
+.hist-target { font-weight: bold; word-break: break-all; margin-bottom: 4px; color: var(--primary-color);}
+.hist-time { font-size: 11px; color: var(--text-color); opacity: 0.6; margin-bottom: 4px; }
+.hist-result.safe { color: #155724; font-weight: 600;}
+.hist-result.danger { color: #d93025; font-weight: bold; }

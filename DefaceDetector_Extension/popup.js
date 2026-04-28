@@ -1,102 +1,185 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Khôi phục cài đặt khi mở Popup
-    chrome.storage.local.get(['theme', 'email'], (result) => {
-        if (result.theme === 'dark') {
-            document.body.classList.add('dark-mode');
-            document.getElementById('toggle-theme').checked = true;
-        }
-        if (result.email) {
-            document.getElementById('input-email').value = result.email;
-        }
+    // ---- 1. MENU & MODALS QUẢN LÝ ----
+    const menuBtn = document.getElementById('menu-btn');
+    const dropdownMenu = document.getElementById('dropdown-menu');
+    const modalModel = document.getElementById('modal-model');
+    const modalEmail = document.getElementById('modal-email');
+    const modalHistory = document.getElementById('modal-history'); // Thêm modal lịch sử
+
+    menuBtn.addEventListener('click', (e) => { dropdownMenu.classList.toggle('show'); e.stopPropagation(); });
+    document.addEventListener('click', (e) => {
+        if (!menuBtn.contains(e.target) && !dropdownMenu.contains(e.target)) dropdownMenu.classList.remove('show');
     });
 
-    // 2. Chuyển đổi Dark/Light Mode
-    document.getElementById('toggle-theme').addEventListener('change', (e) => {
-        document.body.className = e.target.checked ? 'dark-mode' : 'light-mode';
+    document.getElementById('opt-theme').addEventListener('click', (e) => {
+        e.preventDefault(); document.body.classList.toggle('dark-theme'); dropdownMenu.classList.remove('show');
+        chrome.storage.local.set({ isDarkMode: document.body.classList.contains('dark-theme') });
+    });
+    
+    document.getElementById('opt-model').addEventListener('click', (e) => {
+        e.preventDefault(); modalModel.classList.remove('hidden'); dropdownMenu.classList.remove('show');
+    });
+    
+    document.getElementById('opt-account').addEventListener('click', (e) => {
+        e.preventDefault(); modalEmail.classList.remove('hidden'); dropdownMenu.classList.remove('show');
     });
 
-    // 3. Nút Lưu cài đặt
-    document.getElementById('btn-save-settings').addEventListener('click', () => {
-        const theme = document.getElementById('toggle-theme').checked ? 'dark' : 'light';
-        const email = document.getElementById('input-email').value;
-        chrome.storage.local.set({ theme, email }, () => {
-            alert('Đã lưu cấu hình!');
+    // XỬ LÝ NÚT LỊCH SỬ
+    document.getElementById('opt-history').addEventListener('click', (e) => {
+        e.preventDefault(); 
+        loadHistoryUI(); // Gọi hàm hiển thị lịch sử
+        modalHistory.classList.remove('hidden'); 
+        dropdownMenu.classList.remove('show');
+    });
+
+    // Xử lý đóng tất cả Modal
+    document.querySelectorAll('.close-modal-btn').forEach(btn => {
+        btn.addEventListener('click', () => { 
+            modalModel.classList.add('hidden'); 
+            modalEmail.classList.add('hidden'); 
+            modalHistory.classList.add('hidden');
         });
     });
 
-    // 4. Chụp ảnh màn hình & Gửi API
-    document.getElementById('btn-capture').addEventListener('click', () => {
-        const statusEl = document.getElementById('status-text');
-        document.getElementById('result-box').classList.remove('hidden');
-        statusEl.innerText = "Đang chụp ảnh màn hình...";
-        statusEl.style.color = "inherit"; // Reset màu chữ
-
-        chrome.tabs.captureVisibleTab(null, {format: 'png'}, (imageUri) => {
-            statusEl.innerText = "Đang gửi ảnh sang Backend phân tích...";
-            sendToBackend({ type: 'image', data: imageUri });
-        });
-    });
-
-    // 5. Kiểm tra qua URL
-    document.getElementById('btn-check-url').addEventListener('click', () => {
-        const url = document.getElementById('input-url').value;
-        if (!url) {
-            alert("Vui lòng nhập URL cần kiểm tra!");
-            return;
+    // Xử lý Xóa lịch sử
+    document.getElementById('clear-history-btn').addEventListener('click', () => {
+        if(confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử quét?")) {
+            chrome.storage.local.set({ scanHistory: [] }, () => {
+                loadHistoryUI();
+            });
         }
-        
-        const statusEl = document.getElementById('status-text');
-        document.getElementById('result-box').classList.remove('hidden');
-        statusEl.innerText = "Đang gửi URL sang Backend...";
-        statusEl.style.color = "inherit";
-        sendToBackend({ type: 'url', data: url });
     });
-});
 
-// Hàm giao tiếp với Backend
-function sendToBackend(payload) {
-    chrome.storage.local.get(['email'], (settings) => {
-        const backendUrl = "http://127.0.0.1:8000/detect"; 
-        
-        // Đóng gói dữ liệu gửi đi
-        const requestData = {
-            type: payload.type,
-            data: payload.data,
-            model_name: "default", // Vì dùng 1 model nên gán mặc định
-            email: settings.email || ''
-        };
+    document.getElementById('save-model-btn').addEventListener('click', () => {
+        chrome.storage.local.set({ aiModel: document.getElementById('model-select').value }, () => { modalModel.classList.add('hidden'); });
+    });
+    document.getElementById('save-email-btn').addEventListener('click', () => {
+        chrome.storage.local.set({ userEmail: document.getElementById('email-input').value }, () => { modalEmail.classList.add('hidden'); });
+    });
 
-        fetch(backendUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData)
-        })
-        .then(response => {
-            if (!response.ok) throw new Error("Lỗi mạng từ server");
-            return response.json();
-        })
-        .then(data => {
-            const statusEl = document.getElementById('status-text');
+    // Nạp dữ liệu cấu hình khi mở
+    chrome.storage.local.get(['isDarkMode', 'aiModel', 'userEmail'], (data) => {
+        if (data.isDarkMode) document.body.classList.add('dark-theme');
+        if (data.aiModel) document.getElementById('model-select').value = data.aiModel;
+        if (data.userEmail) document.getElementById('email-input').value = data.userEmail;
+    });
+
+    // ---- HÀM HỖ TRỢ LƯU VÀ HIỂN THỊ LỊCH SỬ ----
+    function saveToHistory(targetName, resultData) {
+        // Lấy lịch sử cũ ra, mặc định là mảng rỗng nếu chưa có
+        chrome.storage.local.get({ scanHistory: [] }, (data) => {
+            let history = data.scanHistory;
+            const newItem = {
+                target: targetName,
+                time: new Date().toLocaleString('vi-VN'),
+                is_defaced: resultData.is_defaced,
+                confidence: resultData.confidence
+            };
+            history.unshift(newItem); // Đẩy mục mới lên đầu
+            if (history.length > 20) history.pop(); // Chỉ giữ lại 20 mục gần nhất cho nhẹ máy
             
-            if (data.error) {
-                statusEl.innerText = `Lỗi: ${data.error}`;
-                statusEl.style.color = "red";
+            chrome.storage.local.set({ scanHistory: history });
+        });
+    }
+
+    function loadHistoryUI() {
+        const historyList = document.getElementById('history-list');
+        chrome.storage.local.get({ scanHistory: [] }, (data) => {
+            const history = data.scanHistory;
+            historyList.innerHTML = '';
+            
+            if (history.length === 0) {
+                historyList.innerHTML = '<p style="text-align:center; color:gray; padding: 20px;">Chưa có lịch sử quét nào.</p>';
                 return;
             }
 
-            if (data.is_defaced) {
-                statusEl.innerText = `🚨 PHÁT HIỆN DEFACE! (Độ tin cậy: ${data.confidence}%)`;
-                statusEl.style.color = "#dc3545"; // Đỏ
-            } else {
-                statusEl.innerText = `✅ Trang an toàn (Độ tin cậy: ${data.confidence}%)`;
-                statusEl.style.color = "#28a745"; // Xanh lá
+            history.forEach(item => {
+                const statusClass = item.is_defaced ? 'danger' : 'safe';
+                const statusText = item.is_defaced ? '🚨 Đã bị Deface' : '✅ An Toàn';
+                
+                historyList.innerHTML += `
+                    <div class="history-item">
+                        <div class="hist-target">${item.target}</div>
+                        <div class="hist-time">${item.time}</div>
+                        <div class="hist-result ${statusClass}">${statusText} (${item.confidence}%)</div>
+                    </div>
+                `;
+            });
+        });
+    }
+
+    // ---- 2. LOGIC GỌI API BACKEND ----
+    const resultBox = document.getElementById('result-box');
+    const resultText = document.getElementById('result-text');
+
+    function showResult(message, type) {
+        resultBox.classList.remove('hidden');
+        resultBox.className = `result-box result-${type}`;
+        resultText.innerText = message;
+    }
+
+    async function sendToBackend(payload) {
+        showResult('⏳ Đang phân tích, vui lòng chờ...', 'loading');
+        
+        try {
+            const response = await fetch('http://127.0.0.1:8000/detect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            
+            if (result.error) {
+                showResult(`❌ Lỗi: ${result.error}`, 'danger');
+                return;
             }
-        })
-        .catch(err => {
-            const statusEl = document.getElementById('status-text');
-            statusEl.innerText = "Mất kết nối tới Backend (127.0.0.1:8000)";
-            statusEl.style.color = "red";
-            console.error("Fetch Error:", err);
+
+            if (result.is_defaced) {
+                showResult(`🚨 CẢNH BÁO: Bị Deface!\nĐộ tin cậy: ${result.confidence}%`, 'danger');
+            } else {
+                showResult(`✅ Trang web An Toàn!\nĐộ tin cậy: ${result.confidence}%`, 'safe');
+            }
+
+            // GHI LẠI VÀO LỊCH SỬ SAU KHI QUÉT XONG
+            const targetName = payload.type === 'url' ? payload.data : "Tab hiện tại";
+            saveToHistory(targetName, result);
+
+        } catch (error) {
+            showResult('❌ Lỗi kết nối tới Server Backend (127.0.0.1:8000)', 'danger');
+        }
+    }
+
+    // NÚT 1: CHỤP MÀN HÌNH TAB HIỆN TẠI
+    document.getElementById('scan-tab-btn').addEventListener('click', () => {
+        chrome.storage.local.get(['aiModel', 'userEmail'], (data) => {
+            const currentModel = data.aiModel || 'EfficientNet';
+            const email = data.userEmail || '';
+
+            chrome.tabs.captureVisibleTab(null, {format: 'png'}, (dataUrl) => {
+                if(chrome.runtime.lastError) {
+                    showResult("❌ Không thể chụp tab này (Lỗi quyền).", "danger");
+                    return;
+                }
+                const payload = { type: 'image', data: dataUrl, model_name: currentModel, email: email };
+                sendToBackend(payload);
+            });
         });
     });
-}
+
+    // NÚT 2: QUÉT URL
+    document.getElementById('scan-url-btn').addEventListener('click', () => {
+        const urlValue = document.getElementById('url-input').value.trim();
+        if (!urlValue) {
+            alert("Vui lòng nhập URL cần quét!");
+            return;
+        }
+
+        chrome.storage.local.get(['aiModel', 'userEmail'], (data) => {
+            const currentModel = data.aiModel || 'EfficientNet';
+            const email = data.userEmail || '';
+
+            const payload = { type: 'url', data: urlValue, model_name: currentModel, email: email };
+            sendToBackend(payload);
+        });
+    });
+});
